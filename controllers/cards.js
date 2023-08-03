@@ -44,7 +44,7 @@ const deleteCard = (req, res) => {
           .status(errors.BAD_REQUEST)
           .send({ message: 'Check that the data entered is correct' });
       } else {
-        res.status(500).send({ message: 'Server-side error' });
+        res.status(errors.SERVER_ERROR).send({ message: 'Server-side error' });
       }
     });
 };
@@ -97,7 +97,7 @@ const deleteLike = (req, res) => {
           .send({ message: 'Check that the data entered is correct' });
       } else {
         res
-          .status(errors.BAD_REQUEST)
+          .status(errors.SERVER_ERROR)
           .send({ message: 'Server-side error' });
       }
     });
