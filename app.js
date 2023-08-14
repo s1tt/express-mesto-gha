@@ -1,6 +1,11 @@
 const express = require('express');
+require('dotenv').config();
 
-const { PORT = 3000 } = process.env;
+const { PORT, DB_URL } = process.env;
+
+// const { PORT = 3000 } = process.env;
+// const { DB_URL = 'mongodb://127.0.0.1:27017/mestodb' } = process.env;
+
 const app = express();
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
@@ -11,7 +16,7 @@ const { login, createUser } = require('./controllers/users');
 const auth = require('./middlewares/auth');
 const NotFound = require('./errors/notFoundError');
 
-mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
+mongoose.connect(DB_URL, {
   useNewUrlParser: true,
 });
 
@@ -41,7 +46,7 @@ app.use('/users', routerUser);
 app.use('/cards', routerCard);
 
 app.all('*', (req, res, next) => {
-  next(new NotFound('Page not found'));
+  next(new NotFound('Страница с таким url не найдена'));
 });
 
 app.use(errors());
@@ -49,7 +54,7 @@ app.use(errors());
 app.use((err, req, res, next) => {
   const { statusCode = 500, message } = err;
   res.status(statusCode).send({
-    message: statusCode === 500 ? 'Server-side error' : message,
+    message: statusCode === 500 ? 'На сервере произошла ошибка' : message,
   });
   next();
 });

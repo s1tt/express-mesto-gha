@@ -1,3 +1,4 @@
+const { SECRET_KEY } = process.env;
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
@@ -11,10 +12,10 @@ const login = (req, res, next) => {
   const { email, password } = req.body;
 
   return User.findUserByCredentials(email, password).then((user) => {
-    const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
+    const token = jwt.sign({ _id: user._id }, SECRET_KEY, { expiresIn: '7d' });
     res.send({ token });
   })
-    .catch(() => next(new UnauthorizedError('Invalid e-mail or password')));
+    .catch(() => next(new UnauthorizedError('Переданы некорректные данные')));
 };
 
 const getUsers = (req, res, next) => {
@@ -30,7 +31,7 @@ const getUser = (req, res, next) => {
   User.findById(req.user._id)
     .then((user) => {
       if (!user) {
-        next(new NotFound('User not found'));
+        next(new NotFound('Пользователь не найден'));
         return;
       }
       res.send(user);
@@ -42,13 +43,13 @@ const getUserById = (req, res, next) => {
   User.findById(req.params.userId)
     .then((user) => {
       if (!user) {
-        throw new NotFound('User not found');
+        throw new NotFound('Пользователь не найден');
       }
       res.send({ data: user });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new BadRequest('Check that the data entered is correct'));
+        next(new BadRequest('Переданы некорректные данные'));
         return;
       }
       next(err);
@@ -77,10 +78,10 @@ const createUser = (req, res, next) => {
     .catch((err) => {
       console.log(err.name);
       if (err.code === 11000) {
-        next(new ConflictError(`${email} is already registered`));
+        next(new ConflictError(`${email} уже существует`));
         // return;
       } else if (err.name === 'ValidationError') {
-        next(new BadRequest('Check that the data entered is correct'));
+        next(new BadRequest('Переданы некорректные данные'));
       } else {
         next(err);
       }
@@ -97,14 +98,14 @@ const updateProfile = (req, res, next) => {
   )
     .then((newUser) => {
       if (!newUser) {
-        next(new NotFound('User not found'));
+        next(new NotFound('Пользователь не найден'));
         return;
       }
       res.send({ data: newUser });
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new BadRequest('Check that the data entered is correct'));
+        next(new BadRequest('Переданы некорректные данные'));
       } else {
         next(err);
       }
@@ -121,7 +122,7 @@ const updateAvatar = (req, res, next) => {
     .then((newUser) => res.status(200).send({ data: newUser }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new BadRequest('Check that the data entered is correct'));
+        next(new BadRequest('Переданы некорректные данные'));
       } else {
         next(err);
       }

@@ -17,7 +17,7 @@ const createCard = (req, res, next) => {
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new BadRequest('Check that the data entered is correct'));
+        next(new BadRequest('Переданы некорректные данные'));
       } else {
         next(err);
       }
@@ -28,18 +28,18 @@ const deleteCard = (req, res, next) => {
   Card.findByIdAndDelete(req.params.cardId)
     .then((card) => {
       if (!card) {
-        next(new NotFound('Card not found'));
+        next(new NotFound('Карточка не найдена'));
         return;
       }
       if (req.user._id.toString() !== card.owner.toString()) {
-        next(new ForbiddenError('Access denied'));
+        next(new ForbiddenError('Нельзя удалить чужую карточку'));
         return;
       }
       res.send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new BadRequest('Check that the data entered is correct'));
+        next(new BadRequest('Переданы некорректные данные'));
       } else {
         next(err);
       }
@@ -54,14 +54,14 @@ const likeCard = (req, res, next) => {
   )
     .then((card) => {
       if (!card) {
-        next(new NotFound('Card not found'));
+        next(new NotFound('Карточка не найдена'));
         return;
       }
       res.send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new BadRequest('Check that the data entered is correct'));
+        next(new BadRequest('Переданы некорректные данные'));
       } else {
         next(err);
       }
@@ -76,14 +76,14 @@ const deleteLike = (req, res, next) => {
   )
     .then((card) => {
       if (!card) {
-        next(new NotFound('Card not found'));
+        next(new NotFound('Карточка не найдена'));
         return;
       }
       res.send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new BadRequest('Check that the data entered is correct'));
+        next(new BadRequest('Переданы некорректные данные'));
       } else {
         next(err);
       }
