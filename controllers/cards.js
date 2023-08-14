@@ -1,55 +1,52 @@
 const Card = require('../models/card');
-const errors = require('../utils/errors');
+// const errors = require('../utils/errors');
+const BadRequest = require('../errors/badRequestError');
+const NotFound = require('../errors/notFoundError');
+const ForbiddenError = require('../errors/forbiddenError');
 
-const getCards = (req, res) => {
+const getCards = (req, res, next) => {
   Card.find({})
     .then((cards) => res.send(cards))
-    .catch(() => res
-      .status(errors.SERVER_ERROR)
-      .send({ message: 'Server-side error' }));
+    .catch(next);
 };
 
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
   const { name, link } = req.body;
   const { _id } = req.user;
   Card.create({ name, link, owner: _id })
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res
-          .status(errors.BAD_REQUEST)
-          .send({ message: 'Check that the data entered is correct' });
+        next(new BadRequest('Check that the data entered is correct'));
       } else {
-        res
-          .status(errors.SERVER_ERROR)
-          .send({ message: 'Server-side error' });
+        next(err);
       }
     });
 };
 
-const deleteCard = (req, res) => {
+const deleteCard = (req, res, next) => {
   Card.findByIdAndDelete(req.params.cardId)
     .then((card) => {
       if (!card) {
-        res
-          .status(errors.NOT_FOUND)
-          .send({ message: 'Card not found' });
+        next(new NotFound('Card not found'));
+        return;
+      }
+      if (req.user._id.toString() !== card.owner.toString()) {
+        next(new ForbiddenError('Access denied'));
         return;
       }
       res.send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res
-          .status(errors.BAD_REQUEST)
-          .send({ message: 'Check that the data entered is correct' });
+        next(new BadRequest('Check that the data entered is correct'));
       } else {
-        res.status(errors.SERVER_ERROR).send({ message: 'Server-side error' });
+        next(err);
       }
     });
 };
 
-const likeCard = (req, res) => {
+const likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
@@ -57,26 +54,21 @@ const likeCard = (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        return res
-          .status(errors.NOT_FOUND)
-          .send({ message: 'Card not found' });
+        next(new NotFound('Card not found'));
+        return;
       }
-      return res.send(card);
+      res.send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res
-          .status(errors.BAD_REQUEST)
-          .send({ message: 'Check that the data entered is correct' });
+        next(new BadRequest('Check that the data entered is correct'));
       } else {
-        res
-          .status(errors.SERVER_ERROR)
-          .send({ message: 'Server-side error' });
+        next(err);
       }
     });
 };
 
-const deleteLike = (req, res) => {
+const deleteLike = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } },
@@ -84,21 +76,16 @@ const deleteLike = (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        return res
-          .status(errors.NOT_FOUND)
-          .send({ message: 'Card not found' });
+        next(new NotFound('Card not found'));
+        return;
       }
-      return res.send(card);
+      res.send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res
-          .status(errors.BAD_REQUEST)
-          .send({ message: 'Check that the data entered is correct' });
+        next(new BadRequest('Check that the data entered is correct'));
       } else {
-        res
-          .status(errors.SERVER_ERROR)
-          .send({ message: 'Server-side error' });
+        next(err);
       }
     });
 };

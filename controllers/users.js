@@ -1,60 +1,76 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const errors = require('../utils/errors');
+// const errors = require('../utils/errors');
+const BadRequest = require('../errors/badRequestError');
+const NotFound = require('../errors/notFoundError');
+const ConflictError = require('../errors/conflictError');
+const UnauthorizedError = require('../errors/unauthorizedError');
 
-const getUsers = (req, res) => {
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password).then((user) => {
+    // JWT в httpOnly куку И some-secret-key
+    const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
+    res.send({ token });
+  })
+    .catch(() => next(new UnauthorizedError('Invalid e-mail or password')));
+};
+
+const getUsers = (req, res, next) => {
   User.find({})
     .then((users) => {
       res.send(users);
     })
-    .catch(() => {
-      res
-        .status(errors.SERVER_ERROR)
-        .send({ message: 'Server-side error' });
-    });
+    .catch(next);
 };
 
-const getUser = (req, res) => {
+const getUser = (req, res, next) => {
   User.findById(req.params.userId)
     .then((user) => {
       if (!user) {
-        return res
-          .status(errors.NOT_FOUND)
-          .send({ message: 'User not found' });
+        next(new NotFound('User not found'));
+        return;
       }
-      return res.send(user);
+      res.send(user);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res
-          .status(errors.BAD_REQUEST)
-          .send({ message: 'Check that the data entered is correct' });
+        next(new BadRequest('Check that the data entered is correct'));
       } else {
-        res
-          .status(errors.SERVER_ERROR)
-          .send({ message: 'Server-side error' });
+        next(err);
       }
     });
 };
 
-const createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
+const createUser = (req, res, next) => {
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
+    }))
     .then((user) => res.send(user))
     .catch((err) => {
+      if (err.code === 11000) {
+        next(new ConflictError(`${email} is already registered`));
+        return;
+      }
       if (err.name === 'ValidationError') {
-        console.log(name);
-        res
-          .status(errors.BAD_REQUEST)
-          .send({ message: 'Check that the data entered is correct!' });
+        next(new BadRequest('Check that the data entered is correct'));
       } else {
-        res
-          .status(errors.SERVER_ERROR)
-          .send({ message: 'Server-side error' });
+        next(err);
       }
     });
 };
 
-const updateProfile = (req, res) => {
+const updateProfile = (req, res, next) => {
   const { name, about } = req.body;
   User.findByIdAndUpdate(
     req.user._id,
@@ -63,27 +79,21 @@ const updateProfile = (req, res) => {
   )
     .then((newUser) => {
       if (!newUser) {
-        res
-          .status(errors.NOT_FOUND)
-          .send({ message: 'User not found' });
+        next(new NotFound('User not found'));
         return;
       }
       res.send({ data: newUser });
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res
-          .status(errors.BAD_REQUEST)
-          .send({ message: 'Check that the data entered is correct' });
+        next(new BadRequest('Check that the data entered is correct'));
       } else {
-        res
-          .status(errors.SERVER_ERROR)
-          .send({ message: 'Server-side error' });
+        next(err);
       }
     });
 };
 
-const updateAvatar = (req, res) => {
+const updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
   User.findByIdAndUpdate(
     req.user._id,
@@ -93,13 +103,9 @@ const updateAvatar = (req, res) => {
     .then((newUser) => res.status(200).send({ data: newUser }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res
-          .status(errors.BAD_REQUEST)
-          .send({ message: 'Check that the data entered is correct' });
+        next(new BadRequest('Check that the data entered is correct'));
       } else {
-        res
-          .status(errors.SERVER_ERROR)
-          .send({ message: 'Server-side error' });
+        next(err);
       }
     });
 };
@@ -110,4 +116,5 @@ module.exports = {
   getUser,
   updateAvatar,
   updateProfile,
+  login,
 };
