@@ -27,6 +27,7 @@ const getUsers = (req, res, next) => {
 };
 
 const getUser = (req, res, next) => {
+  console.log(req.params.userId);
   User.findById(req.params.userId)
     .then((user) => {
       if (!user) {
@@ -56,7 +57,13 @@ const createUser = (req, res, next) => {
       email,
       password: hash,
     }))
-    .then((user) => res.send(user))
+    .then((user) => res.send({
+      email: user.email,
+      name: user.name,
+      about: user.about,
+      avatar: user.avatar,
+      _id: user._id,
+    }))
     .catch((err) => {
       console.log(err.name);
       if (err.code === 11000) {
@@ -72,6 +79,7 @@ const createUser = (req, res, next) => {
 
 const updateProfile = (req, res, next) => {
   const { name, about } = req.body;
+  console.log('req');
   User.findByIdAndUpdate(
     req.user._id,
     { name, about },
