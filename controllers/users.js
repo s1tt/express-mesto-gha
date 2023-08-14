@@ -58,11 +58,11 @@ const createUser = (req, res, next) => {
     }))
     .then((user) => res.send(user))
     .catch((err) => {
+      console.log(err.name);
       if (err.code === 11000) {
         next(new ConflictError(`${email} is already registered`));
-        return;
-      }
-      if (err.name === 'ValidationError') {
+        // return;
+      } else if (err.name === 'ValidationError') {
         next(new BadRequest('Check that the data entered is correct'));
       } else {
         next(err);
