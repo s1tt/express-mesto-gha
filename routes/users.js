@@ -4,6 +4,7 @@ const { celebrate, Joi } = require('celebrate');
 const {
   getUsers,
   getUser,
+  getUserById,
   createUser,
   updateProfile,
   updateAvatar,
@@ -17,7 +18,7 @@ routerUser.get('/:userId', celebrate({
   params: Joi.object().keys({
     userId: Joi.string().length(24).hex().required(),
   }),
-}), getUser);
+}), getUserById);
 
 routerUser.post('/', createUser);
 

@@ -11,7 +11,6 @@ const login = (req, res, next) => {
   const { email, password } = req.body;
 
   return User.findUserByCredentials(email, password).then((user) => {
-    // JWT в httpOnly куку И some-secret-key
     const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
     res.send({ token });
   })
@@ -37,6 +36,23 @@ const getUser = (req, res, next) => {
       res.send(user);
     })
     .catch(next);
+};
+
+const getUserById = (req, res, next) => {
+  User.findById(req.params.userId)
+    .then((user) => {
+      if (!user) {
+        throw new NotFound('User not found');
+      }
+      res.send({ data: user });
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequest('Check that the data entered is correct'));
+        return;
+      }
+      next(err);
+    });
 };
 
 const createUser = (req, res, next) => {
@@ -116,6 +132,7 @@ module.exports = {
   getUsers,
   createUser,
   getUser,
+  getUserById,
   updateAvatar,
   updateProfile,
   login,
