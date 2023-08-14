@@ -27,8 +27,8 @@ const getUsers = (req, res, next) => {
 };
 
 const getUser = (req, res, next) => {
-  console.log(req.params.userId);
-  User.findById(req.params.userId)
+  console.log(req.user);
+  User.findById(req.user._id)
     .then((user) => {
       if (!user) {
         next(new NotFound('User not found'));
@@ -36,13 +36,7 @@ const getUser = (req, res, next) => {
       }
       res.send(user);
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new BadRequest('Check that the data entered is correct'));
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };
 
 const createUser = (req, res, next) => {
